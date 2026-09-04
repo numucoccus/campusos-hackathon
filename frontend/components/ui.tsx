@@ -106,7 +106,13 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 }
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={`${fieldCls} ${props.className || ''}`} />;
+  // For date fields, prevent selecting any date before today (unless a min is given).
+  const extra: InputHTMLAttributes<HTMLInputElement> = {};
+  if (props.type === 'date' && props.min === undefined) {
+    const d = new Date();
+    extra.min = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  return <input {...extra} {...props} className={`${fieldCls} ${props.className || ''}`} />;
 }
 
 export function PasswordInput(props: InputHTMLAttributes<HTMLInputElement>) {
