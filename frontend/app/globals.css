@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Light theme - warm off-white, golden-ratio informed spacing */
+  --background: #faf8f4;
+  --surface: #ffffff;
+  --surface-2: #f3f0e9;
+  --border: #e7e2d6;
+  --foreground: #1f2937;
+  --muted: #6b7280;
+  --accent: #4f46e5;
+  --accent-soft: #eef2ff;
+  --accent-fg: #ffffff;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --ring: rgba(79, 70, 229, 0.35);
+}
+
+.dark {
+  /* Dark theme - soft slate/indigo, never pure black */
+  --background: #12172a;
+  --surface: #1a2138;
+  --surface-2: #212a45;
+  --border: #2d3752;
+  --foreground: #e6e9f2;
+  --muted: #9aa3ba;
+  --accent: #818cf8;
+  --accent-soft: #272f4e;
+  --accent-fg: #12172a;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --ring: rgba(129, 140, 248, 0.4);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html { scrollbar-gutter: stable; }
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
