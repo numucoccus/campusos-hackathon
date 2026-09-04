@@ -6,7 +6,7 @@ import { UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Button, Card, Field, Input } from '@/components/ui';
+import { Button, Card, Field, Input, PasswordInput } from '@/components/ui';
 import { useToast } from '@/components/Toast';
 
 export default function RegisterPage() {
@@ -60,11 +60,11 @@ export default function RegisterPage() {
             </Field>
             <div className="grid grid-cols-2 gap-x-3">
               <Field label="Password">
-                <Input type="password" required value={form.password} autoComplete="new-password"
+                <PasswordInput required value={form.password} autoComplete="new-password"
                   onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min 6 chars" />
               </Field>
               <Field label="Confirm password">
-                <Input type="password" required value={form.confirm} autoComplete="new-password"
+                <PasswordInput required value={form.confirm} autoComplete="new-password"
                   onChange={(e) => setForm({ ...form, confirm: e.target.value })} placeholder="Repeat it" />
               </Field>
             </div>

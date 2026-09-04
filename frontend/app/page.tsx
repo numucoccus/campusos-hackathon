@@ -3,15 +3,15 @@ import { api, fmt12h, fmtDate } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { Announcement, Assignment, CampusEvent, Schedule } from '@/lib/types';
 import { motion } from 'framer-motion';
-import { ArrowRight, Bell, CalendarDays, ClipboardList, PartyPopper } from 'lucide-react';
+import { ArrowRight, Bell, CalendarDays, ClipboardList, LogIn, PartyPopper, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Badge, Card, Skeleton } from '@/components/ui';
+import { Badge, Button, Card, Skeleton } from '@/components/ui';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
 export default function Dashboard() {
-  const { identity } = useAuth();
+  const { identity, ready, signedIn } = useAuth();
   const [schedules, setSchedules] = useState<Schedule[] | null>(null);
   const [events, setEvents] = useState<CampusEvent[] | null>(null);
   const [assignments, setAssignments] = useState<Assignment[] | null>(null);
@@ -43,6 +43,26 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold">Welcome back, {identity.name.split(' ')[0]} 👋</h1>
         <p className="mt-1 text-sm text-muted">Here is what is happening on campus right now — all data is live.</p>
       </motion.div>
+
+      {/* Sign in / register call-to-action for guests */}
+      {ready && !signedIn && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <Card className="mt-6 !border-accent/40 bg-accent-soft/40">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold">You are browsing as a guest (demo user)</h2>
+                <p className="mt-0.5 text-xs text-muted">
+                  Sign in or create an account so room bookings, event registrations, and AI-agent actions are made under your own name and student ID.
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Link href="/login"><Button variant="soft"><LogIn size={15} /> Sign in</Button></Link>
+                <Link href="/register"><Button><UserPlus size={15} /> Register</Button></Link>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map(({ label, value, icon: Icon, href }, i) => (

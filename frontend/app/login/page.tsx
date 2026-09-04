@@ -6,7 +6,7 @@ import { LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Button, Card, Field, Input } from '@/components/ui';
+import { Button, Card, Field, Input, PasswordInput } from '@/components/ui';
 import { useToast } from '@/components/Toast';
 
 export default function LoginPage() {
@@ -47,7 +47,7 @@ export default function LoginPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@aust.edu" />
             </Field>
             <Field label="Password">
-              <Input type="password" required value={form.password} autoComplete="current-password"
+              <PasswordInput required value={form.password} autoComplete="current-password"
                 onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
             </Field>
             <Button type="submit" disabled={busy || !form.email || !form.password} className="mt-2 w-full">
