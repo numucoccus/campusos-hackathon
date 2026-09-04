@@ -1,0 +1,21 @@
+{
+  "name": "campusos-backend",
+  "version": "1.0.0",
+  "description": "CampusOS backend — Express + Supabase + AI agent",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node scripts/seed.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.115.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "openai": "^7.10.0",
+    "zod": "^4.5.4"
+  }
+}
