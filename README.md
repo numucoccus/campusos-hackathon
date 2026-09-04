@@ -1,143 +1,66 @@
-# CampusOS — AI-Powered Campus Platform
-
-> AI Build Hackathon submission. A two-part university platform: a live campus data dashboard + an AI agent that reads and acts on the **current** data through real tool calling.
+# CampusOS
 
 ## Project Overview
 
-CampusOS keeps a student's scattered campus information — class schedules, rooms, events, announcements, and assignment deadlines — in one place. Part 1 is a full CRUD dashboard for all five systems, backed by a Supabase PostgreSQL database that is the single source of truth. Part 2 is an AI assistant (Groq LLM with genuine function calling) whose every tool call goes through the **exact same service layer** as the REST API, so a change made in the dashboard one second ago is what the agent answers from the next second. The agent answers questions across systems, books rooms after checking conflicts, registers for events, asks clarifying questions on vague requests, and refuses unauthorized actions (enforced in code, not just in the prompt).
-
-## Architecture
-
-```
-        Next.js frontend (dashboard + chat UI)
-                        │  REST
-                        ▼
-              Express backend (/api)
-            ┌───────────┴───────────┐
-        Routes                  AI Agent (Groq, tool calling)
-            │                       │ tools.js — thin wrappers
-            └───────────┬───────────┘
-                    Services          ← ONE shared layer: validation,
-              (business logic, auth,     conflict checks, ownership rules
-               conflict detection)
-                        │
-                        ▼
-              Supabase PostgreSQL     ← single source of truth
-```
+CampusOS is an intelligent university platform with two parts that share one live database. The **dashboard** lets you view and fully manage (add, edit, delete) five campus systems — class schedules, rooms, events, announcements, and assignments — with extra actions for booking rooms and registering for events. The **AI agent** sits on top of the same data and uses real LLM tool/function calling to answer questions and take actions (book a room after checking conflicts, register for an event, look things up across systems), always reading the current backend state so any change made in the dashboard is reflected instantly. Access is protected by JWT authentication: users register/sign in, and their identity is used for every booking, registration, and agent action.
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 16 (App Router), React, TypeScript |
-| Styling / UX | Tailwind CSS v4, Framer Motion, Lucide icons, dark & light themes |
-| Backend | Node.js + Express |
-| Validation | Zod (shared by REST routes and AI tools) |
-| Database | Supabase (PostgreSQL) with constraint-level double-booking guard |
-| Authentication | Supabase Auth (user store) + **JWT** (jsonwebtoken) for API access |
-| AI | Groq — `openai/gpt-oss-120b` with native function/tool calling |
+- **Frontend:** Next.js (App Router) + React + TypeScript, Tailwind CSS, Framer Motion, Lucide icons
+- **Backend:** Node.js + Express, Zod validation
+- **Database:** Supabase (PostgreSQL)
+- **Auth:** Supabase Auth (user store) + JWT (`jsonwebtoken`)
+- **LLM:** Groq — `openai/gpt-oss-120b` with function/tool calling
 
 ## Setup Instructions
 
-Prerequisites: **Node.js 20+**, a free [Supabase](https://supabase.com) project, a free [Groq](https://console.groq.com) API key.
+Prerequisites: Node.js 20+, a free [Supabase](https://supabase.com) project, and a free [Groq](https://console.groq.com) API key.
 
-### 1. Database (Supabase)
+**1. Database**
+- In your Supabase project, open the **SQL Editor** and run the contents of [`backend/database/schema.sql`](./backend/database/schema.sql).
+- From **Project Settings → API**, copy the Project URL and the `service_role` key.
 
-1. Create a Supabase project.
-2. Open the **SQL Editor**, paste the entire contents of [`backend/database/schema.sql`](./backend/database/schema.sql), and run it.
-3. From **Project Settings → API**, copy the **Project URL** and the **service_role key**.
-
-### 2. Backend
-
+**2. Backend**
 ```bash
 cd backend
 npm install
-copy .env.example .env      # (cp on macOS/Linux) then fill in the values below
-npm run seed                # loads the 5 JSON seed files from ../data into Supabase
-npm start                   # → http://localhost:3001  (health: /api/health)
+cp .env.example .env      # then fill in the values (see below)
+npm run seed              # loads the seed data from ../data into Supabase
+npm start                 # runs on http://localhost:3001
 ```
 
-### 3. Frontend
-
+**3. Frontend**
 ```bash
 cd frontend
 npm install
-npm run dev                 # → http://localhost:3000
+npm run dev               # runs on http://localhost:3000
 ```
 
-Open http://localhost:3000 — you'll land on the home page. Click **Get Started**, create an account (takes a few seconds), and you're in.
+Open http://localhost:3000, click **Get Started**, create an account, and you're in.
 
 ## Environment Variables
 
-All backend variables go in `backend/.env` (see [`backend/.env.example`](./backend/.env.example)). **Never commit real keys.**
+Set these in `backend/.env` (see [`backend/.env.example`](./backend/.env.example)). Do not commit real keys.
 
-| Key | Where | Description |
-|---|---|---|
-| `SUPABASE_URL` | backend/.env | Supabase project URL (`https://xxxx.supabase.co`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | backend/.env | Supabase service role key (server-side only) |
-| `GROQ_API_KEY` | backend/.env | Groq API key for the AI agent |
-| `JWT_SECRET` | backend/.env | Secret used to sign JWT auth tokens (any long random string) |
-| `PORT` | backend/.env | Backend port (default `3001`) |
-| `NEXT_PUBLIC_API_URL` | frontend/.env.local (optional) | Backend API base, default `http://localhost:3001/api` |
+| Key | Description |
+|---|---|
+| `SUPABASE_URL` | Supabase project URL (`https://xxxx.supabase.co`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) |
+| `GROQ_API_KEY` | Groq API key for the AI agent |
+| `JWT_SECRET` | Any long random string used to sign auth tokens |
+| `PORT` | Backend port (optional, default `3001`) |
+
+Frontend (optional, in `frontend/.env.local`): `NEXT_PUBLIC_API_URL` — backend API base, default `http://localhost:3001/api`.
 
 ## How to Use the Agent
 
-Open **AI Assistant** in the sidebar (or the floating bot button). It works from live data on every request. Try:
+Open **AI Assistant** from the sidebar (or the floating button). Ask natural questions like:
 
-- "When is my next class?" — reads the timetable *and* checks announcements for reschedules
+- "When is my next class?"
 - "What assignments do I have due this week?"
 - "Show me all high priority announcements."
 - "Which labs have a projector and can fit at least 30 people?"
-- "Book Room 7A02 tomorrow from 3 PM to 5 PM." — checks conflicts (classes + bookings), then books
-- "I need a room for 5 people with a projector, tomorrow between 2 and 4."
+- "Book Room 7A02 tomorrow from 3 PM to 5 PM."
 - "Register me for the Guest Lecture on Deep Learning."
-- "Just book me any room tomorrow afternoon." — deliberately vague: the agent asks before acting
-- "Cancel the CS department's booking." — refused: you can only cancel your own bookings
 
-Edit anything in the dashboard, then ask the agent about it — it answers from the updated data immediately.
-
-## Accounts & JWT Authentication
-
-CampusOS opens on a **public landing page**; the app itself is **gated behind authentication** — signed-out visitors are redirected to sign in and cannot see any campus data.
-
-- **/** — landing page with a **Get Started** button
-- **/register** — create an account (name, student ID, email, password)
-- **/login** — sign in; the server verifies the password (Supabase Auth stores users with secure hashing) and returns a **signed JWT** (`jsonwebtoken`, 7-day expiry) with your identity claims
-- **/dashboard**, **/schedule**, **/rooms**, **/events**, **/announcements**, **/assignments**, **/assistant**, **/profile** — protected app pages
-- **/profile** — your info, your room bookings, and your event registrations (cancel from here)
-
-How it works:
-
-- The JWT is stored client-side and sent as `Authorization: Bearer <token>` on **every** API request.
-- Backend middleware verifies the token on each request (`optionalAuth` globally; `requireAuth` protects `/api/auth/me`). Invalid/expired tokens are rejected with **401**.
-- All data pages sit behind a client-side auth guard; signing out returns you to the login screen and clears access.
-- Room bookings, event registrations, and AI-agent actions use your **server-trusted JWT identity** — a client cannot spoof `booked_by` or the registrant, and you can only cancel your own bookings/registrations.
-
-## Project Structure
-
-```
-backend/
-├── routes/        REST endpoints (schedules, rooms, events, announcements, assignments, chat)
-├── services/      Business logic — the ONLY layer that touches Supabase
-├── ai/            agent.js (tool-calling loop) + tools.js (wrappers over services)
-├── validation/    Zod schemas shared by routes and AI tools
-├── middleware/    validate.js, errorHandler.js
-├── database/      supabaseClient.js + schema.sql
-├── utils/         custom error classes, date/time helpers
-└── scripts/       seed.js, smokeTest.js, apiTest.js, agentTest.js
-
-frontend/
-├── app/
-│   ├── page.tsx        public landing page
-│   ├── login, register auth screens
-│   └── (app)/          auth-guarded pages: dashboard, schedule, rooms, events, announcements, assignments, assistant, profile
-├── components/    Shell (nav), AuthGuard, ui.tsx (design system), Toast, ThemeToggle
-└── lib/           typed API client (attaches JWT) + shared types + auth state
-
-data/              hackathon seed JSON (loaded into Supabase by npm run seed)
-schema/            hackathon schema reference
-```
-
-## Hackathon Docs
-
-- [Problem statement](./PROBLEM_STATEMENT.md) · [Schema](./schema/schema.md) · [Sample queries](./sample_queries/sample_queries.md) · [Submission guide](./SUBMISSION.md)
+The agent reads live data on every request, asks for clarification when a request is vague, and refuses actions on other users' data.

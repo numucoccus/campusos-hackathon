@@ -1,9 +1,9 @@
 'use client';
 import { api, fmt12h, fmtDate } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import type { Announcement, Assignment, CampusEvent, Schedule } from '@/lib/types';
+import type { Announcement, Assignment, CampusEvent, Room, Schedule } from '@/lib/types';
 import { motion } from 'framer-motion';
-import { ArrowRight, Bell, CalendarDays, ClipboardList, PartyPopper } from 'lucide-react';
+import { ArrowRight, CalendarDays, ClipboardList, DoorOpen, PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Card, Skeleton } from '@/components/ui';
@@ -16,12 +16,14 @@ export default function Dashboard() {
   const [events, setEvents] = useState<CampusEvent[] | null>(null);
   const [assignments, setAssignments] = useState<Assignment[] | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[] | null>(null);
+  const [rooms, setRooms] = useState<Room[] | null>(null);
 
   useEffect(() => {
     api.schedules.list().then(setSchedules).catch(() => setSchedules([]));
     api.events.list().then(setEvents).catch(() => setEvents([]));
     api.assignments.list().then(setAssignments).catch(() => setAssignments([]));
     api.announcements.list({ activeOnly: true }).then(setAnnouncements).catch(() => setAnnouncements([]));
+    api.rooms.list().then(setRooms).catch(() => setRooms([]));
   }, []);
 
   const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
@@ -29,12 +31,13 @@ export default function Dashboard() {
   const upcomingEvents = events?.filter((e) => ['upcoming', 'ongoing', 'full'].includes(e.status)) ?? null;
   const pendingAssignments = assignments?.filter((a) => a.status === 'pending') ?? null;
   const highPriority = announcements?.filter((a) => a.priority === 'high') ?? null;
+  const availableRooms = rooms?.filter((r) => r.status === 'available').sort((a, b) => a.room_number.localeCompare(b.room_number)) ?? null;
 
   const stats = [
     { label: DAYS.includes(todayName) ? 'Classes today' : 'Classes today (weekend)', value: todayClasses?.length, icon: CalendarDays, href: '/schedule' },
+    { label: 'Available rooms', value: availableRooms?.length, icon: DoorOpen, href: '/rooms' },
     { label: 'Upcoming events', value: upcomingEvents?.length, icon: PartyPopper, href: '/events' },
     { label: 'Pending assignments', value: pendingAssignments?.length, icon: ClipboardList, href: '/assignments' },
-    { label: 'Active announcements', value: announcements?.length, icon: Bell, href: '/announcements' },
   ];
 
   return (
@@ -64,6 +67,37 @@ export default function Dashboard() {
           </motion.div>
         ))}
       </div>
+
+      {/* Available rooms */}
+      <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold"><DoorOpen size={18} className="text-accent" /> Available rooms</h2>
+          <Link href="/rooms" className="text-xs font-medium text-accent hover:underline">Manage rooms</Link>
+        </div>
+        <Card>
+          {availableRooms === null ? (
+            <div className="flex flex-wrap gap-2">
+              {[...Array(10)].map((_, i) => <Skeleton key={i} className="h-9 w-16" />)}
+            </div>
+          ) : availableRooms.length === 0 ? (
+            <p className="text-sm text-muted">No rooms are currently available.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {availableRooms.map((r) => (
+                <Link
+                  key={r.id}
+                  href="/rooms"
+                  className="group inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface-2 px-3 py-1.5 text-sm font-semibold transition hover:border-accent/50 hover:text-accent"
+                  title={`${r.type} · capacity ${r.capacity}`}
+                >
+                  {r.room_number}
+                  <span className="text-[11px] font-normal text-muted">· {r.capacity}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </Card>
+      </motion.section>
 
       {/* High priority strip */}
       <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mt-8">

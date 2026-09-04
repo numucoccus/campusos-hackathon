@@ -23,9 +23,16 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   });
 
   return (
-    <div className="flex min-h-screen">
+    <div className="relative flex min-h-screen">
+      {/* Ambient gradient backdrop — matches the landing page aesthetic */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -top-48 left-1/3 h-[32rem] w-[32rem] -translate-x-1/2 rounded-full bg-accent/15 blur-[130px]" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-accent/10 blur-[120px]" />
+        <div className="absolute bottom-20 left-0 h-80 w-80 rounded-full bg-success/8 blur-[120px]" />
+      </div>
+
       {/* Sidebar (desktop) */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border bg-surface md:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border bg-surface/80 backdrop-blur md:flex">
         <div className="flex items-center gap-2 px-6 py-5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-accent-fg font-bold">C</div>
           <div>
