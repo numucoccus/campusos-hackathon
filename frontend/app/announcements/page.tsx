@@ -1,5 +1,6 @@
 'use client';
 import { api, fmtDate, ApiError } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import type { Announcement } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
@@ -8,16 +9,17 @@ import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Modal, Se
 import { useToast } from '@/components/Toast';
 
 const today = () => new Date().toISOString().slice(0, 10);
-const empty = () => ({ title: '', body: '', priority: 'medium', posted_by: 'Dhrubo', date: today(), expires: today() });
+const empty = (postedBy: string) => ({ title: '', body: '', priority: 'medium', posted_by: postedBy, date: today(), expires: today() });
 
 export default function AnnouncementsPage() {
   const toast = useToast();
+  const { identity } = useAuth();
   const [items, setItems] = useState<Announcement[] | null>(null);
   const [priority, setPriority] = useState('');
   const [show, setShow] = useState<'all' | 'active' | 'expired'>('all');
   const [modal, setModal] = useState<{ mode: 'add' | 'edit'; item?: Announcement } | null>(null);
   const [confirm, setConfirm] = useState<Announcement | null>(null);
-  const [form, setForm] = useState<Record<string, string>>(empty());
+  const [form, setForm] = useState<Record<string, string>>(empty(identity.name));
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(() => {
@@ -31,7 +33,7 @@ export default function AnnouncementsPage() {
     (show === 'all' || (show === 'active' ? !isExpired(a) : isExpired(a)))
   ), [items, priority, show]);
 
-  const openAdd = () => { setForm(empty()); setModal({ mode: 'add' }); };
+  const openAdd = () => { setForm(empty(identity.name)); setModal({ mode: 'add' }); };
   const openEdit = (a: Announcement) => {
     setForm({ title: a.title, body: a.body, priority: a.priority, posted_by: a.posted_by, date: a.date, expires: a.expires });
     setModal({ mode: 'edit', item: a });
