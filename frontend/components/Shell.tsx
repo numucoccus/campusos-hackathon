@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import ThemeToggle from './ThemeToggle';
 
 const nav = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/schedule', label: 'Schedule', icon: CalendarDays },
   { href: '/rooms', label: 'Rooms', icon: DoorOpen },
   { href: '/events', label: 'Events', icon: PartyPopper },

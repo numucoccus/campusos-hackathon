@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Shell from "@/components/Shell";
 import { ToastProvider } from "@/components/Toast";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -30,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full">
         <ToastProvider>
-          <Shell>{children}</Shell>
+          {children}
         </ToastProvider>
       </body>
     </html>

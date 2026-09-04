@@ -22,7 +22,7 @@ export default function LoginPage() {
       const res = await api.auth.login(form);
       setAuth(res.token, res.user);
       toast(`Welcome back, ${res.user.name}!`);
-      router.push('/profile');
+      router.push('/dashboard');
     } catch (err) {
       toast(err instanceof ApiError ? err.message : 'Sign in failed', 'error');
     } finally {
@@ -31,8 +31,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-md items-center">
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="w-full">
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+        <Link href="/" className="mb-6 flex items-center justify-center gap-2 text-lg font-bold">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-accent-fg">C</span>
+          CampusOS
+        </Link>
         <Card className="!p-8">
           <div className="mb-6 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-soft text-accent">
@@ -57,9 +61,6 @@ export default function LoginPage() {
           <p className="mt-5 text-center text-xs text-muted">
             No account yet?{' '}
             <Link href="/register" className="font-medium text-accent hover:underline">Create one</Link>
-          </p>
-          <p className="mt-2 text-center text-[11px] text-muted">
-            You can also browse without an account — actions then use the demo identity.
           </p>
         </Card>
       </motion.div>

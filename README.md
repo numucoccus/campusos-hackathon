@@ -65,7 +65,7 @@ npm install
 npm run dev                 # → http://localhost:3000
 ```
 
-Open http://localhost:3000 — the dashboard and the AI assistant are ready.
+Open http://localhost:3000 — you'll land on the home page. Click **Get Started**, create an account (takes a few seconds), and you're in.
 
 ## Environment Variables
 
@@ -98,18 +98,20 @@ Edit anything in the dashboard, then ask the agent about it — it answers from 
 
 ## Accounts & JWT Authentication
 
-CampusOS uses **JWT-based authentication**:
+CampusOS opens on a **public landing page**; the app itself is **gated behind authentication** — signed-out visitors are redirected to sign in and cannot see any campus data.
 
+- **/** — landing page with a **Get Started** button
 - **/register** — create an account (name, student ID, email, password)
 - **/login** — sign in; the server verifies the password (Supabase Auth stores users with secure hashing) and returns a **signed JWT** (`jsonwebtoken`, 7-day expiry) with your identity claims
+- **/dashboard**, **/schedule**, **/rooms**, **/events**, **/announcements**, **/assignments**, **/assistant**, **/profile** — protected app pages
 - **/profile** — your info, your room bookings, and your event registrations (cancel from here)
 
 How it works:
 
 - The JWT is stored client-side and sent as `Authorization: Bearer <token>` on **every** API request.
 - Backend middleware verifies the token on each request (`optionalAuth` globally; `requireAuth` protects `/api/auth/me`). Invalid/expired tokens are rejected with **401**.
-- When you are signed in, room bookings, event registrations, and AI-agent actions use your **server-trusted JWT identity** — a client cannot spoof `booked_by` or the registrant, and you can only cancel your own bookings/registrations.
-- Without an account the app still works as a demo user (`Dhrubo`, `20-40532`), so judges can use everything with zero setup.
+- All data pages sit behind a client-side auth guard; signing out returns you to the login screen and clears access.
+- Room bookings, event registrations, and AI-agent actions use your **server-trusted JWT identity** — a client cannot spoof `booked_by` or the registrant, and you can only cancel your own bookings/registrations.
 
 ## Project Structure
 
@@ -125,9 +127,12 @@ backend/
 └── scripts/       seed.js, smokeTest.js, apiTest.js, agentTest.js
 
 frontend/
-├── app/           pages: dashboard, schedule, rooms, events, announcements, assignments, assistant, login, register, profile
-├── components/    Shell (nav), ui.tsx (design system), Toast, ThemeToggle
-└── lib/           typed API client + shared types + auth state
+├── app/
+│   ├── page.tsx        public landing page
+│   ├── login, register auth screens
+│   └── (app)/          auth-guarded pages: dashboard, schedule, rooms, events, announcements, assignments, assistant, profile
+├── components/    Shell (nav), AuthGuard, ui.tsx (design system), Toast, ThemeToggle
+└── lib/           typed API client (attaches JWT) + shared types + auth state
 
 data/              hackathon seed JSON (loaded into Supabase by npm run seed)
 schema/            hackathon schema reference
