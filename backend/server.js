@@ -2,10 +2,14 @@ require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const { errorHandler } = require('./middleware/errorHandler');
+const { optionalAuth } = require('./middleware/auth');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Attach req.user from a valid JWT when present (guests still allowed through).
+app.use(optionalAuth);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'campusos-backend', time: new Date().toISOString() });

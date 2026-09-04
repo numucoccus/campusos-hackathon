@@ -1,9 +1,11 @@
-// Auth routes — backed by Supabase Auth (GoTrue). The service-role client can
-// create users and validate tokens; no extra tables or packages needed.
+// Auth routes — Supabase Auth stores users (secure password hashing); we issue
+// our own signed JWTs (jsonwebtoken) for API access.
 const router = require('express').Router();
 const { createClient } = require('@supabase/supabase-js');
 const supabase = require('../database/supabaseClient');
 const { asyncHandler } = require('../middleware/errorHandler');
+const { requireAuth } = require('../middleware/auth');
+const { signToken } = require('../utils/jwt');
 const { ValidationError, UnauthorizedError } = require('../utils/errors');
 
 // IMPORTANT: signInWithPassword sets the signed-in user's session on the client
@@ -41,11 +43,8 @@ router.post('/register', asyncHandler(async (req, res) => {
     throw new ValidationError(error.message);
   }
 
-  // Sign them in right away so the client gets a token (dedicated client — see note above).
-  const { data: session, error: loginError } = await authClient.auth.signInWithPassword({ email, password });
-  if (loginError) throw new ValidationError(loginError.message);
-
-  res.status(201).json({ token: session.session.access_token, user: publicUser(created.user) });
+  const user = publicUser(created.user);
+  res.status(201).json({ token: signToken(user), user });
 }));
 
 // POST /api/auth/login  { email, password }
@@ -56,16 +55,13 @@ router.post('/login', asyncHandler(async (req, res) => {
   const { data, error } = await authClient.auth.signInWithPassword({ email, password });
   if (error) throw new UnauthorizedError('Invalid email or password');
 
-  res.json({ token: data.session.access_token, user: publicUser(data.user) });
+  const user = publicUser(data.user);
+  res.json({ token: signToken(user), user });
 }));
 
 // GET /api/auth/me  (Authorization: Bearer <token>)
-router.get('/me', asyncHandler(async (req, res) => {
-  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (!token) throw new UnauthorizedError('Missing token');
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data.user) throw new UnauthorizedError('Invalid or expired session');
-  res.json({ user: publicUser(data.user) });
-}));
+router.get('/me', requireAuth, (req, res) => {
+  res.json({ user: req.user });
+});
 
 module.exports = router;

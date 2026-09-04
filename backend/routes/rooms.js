@@ -49,13 +49,17 @@ router.delete('/:id', asyncHandler(async (req, res) => {
 }));
 
 // POST /api/rooms/7A02/book  { date, start_time, end_time, booked_by, purpose }
+// When signed in, the JWT identity overrides booked_by (can't be spoofed).
 router.post('/:roomNumber/book', validate(bookingCreate), asyncHandler(async (req, res) => {
-  res.status(201).json(await service.bookRoom({ room_number: req.params.roomNumber, ...req.body }));
+  const booked_by = req.user ? req.user.name : req.body.booked_by;
+  res.status(201).json(await service.bookRoom({ room_number: req.params.roomNumber, ...req.body, booked_by }));
 }));
 
 // DELETE /api/rooms/bookings/bk-001  { requested_by }
+// When signed in, ownership is checked against the JWT identity.
 router.delete('/bookings/:bookingId', validate(cancelBookingBody), asyncHandler(async (req, res) => {
-  res.json(await service.cancelBooking(req.params.bookingId, req.body.requested_by));
+  const requested_by = req.user ? req.user.name : req.body.requested_by;
+  res.json(await service.cancelBooking(req.params.bookingId, requested_by));
 }));
 
 module.exports = router;

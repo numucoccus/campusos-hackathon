@@ -34,7 +34,7 @@ CampusOS keeps a student's scattered campus information — class schedules, roo
 | Backend | Node.js + Express |
 | Validation | Zod (shared by REST routes and AI tools) |
 | Database | Supabase (PostgreSQL) with constraint-level double-booking guard |
-| Authentication | Supabase Auth (register / login / profile) |
+| Authentication | Supabase Auth (user store) + **JWT** (jsonwebtoken) for API access |
 | AI | Groq — `openai/gpt-oss-120b` with native function/tool calling |
 
 ## Setup Instructions
@@ -76,6 +76,7 @@ All backend variables go in `backend/.env` (see [`backend/.env.example`](./backe
 | `SUPABASE_URL` | backend/.env | Supabase project URL (`https://xxxx.supabase.co`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | backend/.env | Supabase service role key (server-side only) |
 | `GROQ_API_KEY` | backend/.env | Groq API key for the AI agent |
+| `JWT_SECRET` | backend/.env | Secret used to sign JWT auth tokens (any long random string) |
 | `PORT` | backend/.env | Backend port (default `3001`) |
 | `NEXT_PUBLIC_API_URL` | frontend/.env.local (optional) | Backend API base, default `http://localhost:3001/api` |
 
@@ -95,15 +96,20 @@ Open **AI Assistant** in the sidebar (or the floating bot button). It works from
 
 Edit anything in the dashboard, then ask the agent about it — it answers from the updated data immediately.
 
-## Accounts (Sign in / Register / Profile)
+## Accounts & JWT Authentication
 
-CampusOS includes optional authentication backed by **Supabase Auth**:
+CampusOS uses **JWT-based authentication**:
 
 - **/register** — create an account (name, student ID, email, password)
-- **/login** — sign in; the sidebar, dashboard, and agent then act as *you*
+- **/login** — sign in; the server verifies the password (Supabase Auth stores users with secure hashing) and returns a **signed JWT** (`jsonwebtoken`, 7-day expiry) with your identity claims
 - **/profile** — your info, your room bookings, and your event registrations (cancel from here)
 
-When signed in, room bookings, event registrations, and every AI-agent action are made under **your name and student ID** — and the ownership rules apply to you (you can only cancel your own bookings/registrations). Without an account the app browses as a demo user (`Dhrubo`, `20-40532`), so judges can use everything with zero setup.
+How it works:
+
+- The JWT is stored client-side and sent as `Authorization: Bearer <token>` on **every** API request.
+- Backend middleware verifies the token on each request (`optionalAuth` globally; `requireAuth` protects `/api/auth/me`). Invalid/expired tokens are rejected with **401**.
+- When you are signed in, room bookings, event registrations, and AI-agent actions use your **server-trusted JWT identity** — a client cannot spoof `booked_by` or the registrant, and you can only cancel your own bookings/registrations.
+- Without an account the app still works as a demo user (`Dhrubo`, `20-40532`), so judges can use everything with zero setup.
 
 ## Project Structure
 

@@ -50,6 +50,17 @@ export function useAuth() {
     };
   }, []);
 
+  // Validate the stored JWT once on mount; clear it if it is expired/invalid.
+  useEffect(() => {
+    const current = getAuth();
+    if (!current) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/me`, {
+      headers: { Authorization: `Bearer ${current.token}` },
+    })
+      .then((r) => { if (r.status === 401 || r.status === 403) clearAuth(); })
+      .catch(() => {});
+  }, []);
+
   return {
     ready,
     user: auth?.user ?? null,

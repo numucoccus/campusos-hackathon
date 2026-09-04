@@ -14,8 +14,10 @@ router.post('/', asyncHandler(async (req, res) => {
     .map((m) => ({ role: m.role, content: m.content }));
   if (clean.length === 0) throw new ValidationError('No valid messages provided');
 
-  const agentUser =
-    user && typeof user.name === 'string' && user.name && typeof user.student_id === 'string' && user.student_id
+  // Prefer the server-trusted JWT identity; fall back to the body (demo), then default.
+  const agentUser = req.user
+    ? { name: req.user.name, student_id: req.user.student_id }
+    : user && typeof user.name === 'string' && user.name && typeof user.student_id === 'string' && user.student_id
       ? { name: user.name, student_id: user.student_id }
       : DEFAULT_USER;
 

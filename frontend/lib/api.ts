@@ -6,6 +6,18 @@ import type {
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
+// Reads the JWT saved by the auth layer (lib/auth.ts) without importing it,
+// to avoid a circular dependency.
+function authToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('campusos-auth');
+    return raw ? JSON.parse(raw).token ?? null : null;
+  } catch {
+    return null;
+  }
+}
+
 export class ApiError extends Error {
   status: number;
   details?: unknown;
@@ -17,9 +29,12 @@ export class ApiError extends Error {
 }
 
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const token = authToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
     cache: 'no-store',
   });
@@ -97,6 +112,7 @@ export const api = {
       req<{ token: string; user: { id: string; email: string; name: string; student_id: string } }>('POST', '/auth/register', data),
     login: (data: { email: string; password: string }) =>
       req<{ token: string; user: { id: string; email: string; name: string; student_id: string } }>('POST', '/auth/login', data),
+    me: () => req<{ user: { id: string; email: string; name: string; student_id: string } }>('GET', '/auth/me'),
   },
 };
 
