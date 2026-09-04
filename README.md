@@ -1,102 +1,121 @@
-# CampusOS — AI Build Hackathon
+# CampusOS — AI-Powered Campus Platform
 
-An intelligent university platform powered by an AI agent that understands and acts on real-time campus data.
+> AI Build Hackathon submission. A two-part university platform: a live campus data dashboard + an AI agent that reads and acts on the **current** data through real tool calling.
 
----
+## Project Overview
 
-## The Challenge
+CampusOS keeps a student's scattered campus information — class schedules, rooms, events, announcements, and assignment deadlines — in one place. Part 1 is a full CRUD dashboard for all five systems, backed by a Supabase PostgreSQL database that is the single source of truth. Part 2 is an AI assistant (Groq LLM with genuine function calling) whose every tool call goes through the **exact same service layer** as the REST API, so a change made in the dashboard one second ago is what the agent answers from the next second. The agent answers questions across systems, books rooms after checking conflicts, registers for events, asks clarifying questions on vague requests, and refuses unauthorized actions (enforced in code, not just in the prompt).
 
-Students struggle daily with scattered campus information — class changes buried in group chats, deadlines forgotten until the last minute, no easy way to know what's happening on campus right now.
-
-Your job: build **CampusOS** — a two-part app with a data dashboard and an AI agent that always reads live data.
-
-Read the full problem statement → [`PROBLEM_STATEMENT.md`](./PROBLEM_STATEMENT.md)
-
----
-
-## Repository Structure
+## Architecture
 
 ```
-campusos-hackathon/
-│
-├── README.md                    ← You are here
-├── PROBLEM_STATEMENT.md         ← Full problem statement + scoring
-├── SUBMISSION.md                ← How and where to submit
-│
-├── data/                        ← Seed data (load these into your backend)
-│   ├── schedules.json
-│   ├── rooms.json
-│   ├── events.json
-│   ├── announcements.json
-│   └── assignments.json
-│
-├── schema/
-│   └── schema.md                ← Field names, types, and constraints for all 5 systems
-│
-└── sample_queries/
-    └── sample_queries.md        ← Queries we will use when judging your agent
+        Next.js frontend (dashboard + chat UI)
+                        │  REST
+                        ▼
+              Express backend (/api)
+            ┌───────────┴───────────┐
+        Routes                  AI Agent (Groq, tool calling)
+            │                       │ tools.js — thin wrappers
+            └───────────┬───────────┘
+                    Services          ← ONE shared layer: validation,
+              (business logic, auth,     conflict checks, ownership rules
+               conflict detection)
+                        │
+                        ▼
+              Supabase PostgreSQL     ← single source of truth
 ```
 
----
+## Tech Stack
 
-## How to Participate
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16 (App Router), React, TypeScript |
+| Styling / UX | Tailwind CSS v4, Framer Motion, Lucide icons, dark & light themes |
+| Backend | Node.js + Express |
+| Validation | Zod (shared by REST routes and AI tools) |
+| Database | Supabase (PostgreSQL) with constraint-level double-booking guard |
+| AI | Groq — `openai/gpt-oss-120b` with native function/tool calling |
 
-### 1. Fork the repository
+## Setup Instructions
 
-Click **Fork** in the top-right corner of this repo's GitHub page. This creates your own copy under your GitHub account, where you'll build your solution.
+Prerequisites: **Node.js 20+**, a free [Supabase](https://supabase.com) project, a free [Groq](https://console.groq.com) API key.
 
-### 2. Clone your fork
+### 1. Database (Supabase)
+
+1. Create a Supabase project.
+2. Open the **SQL Editor**, paste the entire contents of [`backend/database/schema.sql`](./backend/database/schema.sql), and run it.
+3. From **Project Settings → API**, copy the **Project URL** and the **service_role key**.
+
+### 2. Backend
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/campusos-hackathon.git
-cd campusos-hackathon
+cd backend
+npm install
+copy .env.example .env      # (cp on macOS/Linux) then fill in the values below
+npm run seed                # loads the 5 JSON seed files from ../data into Supabase
+npm start                   # → http://localhost:3001  (health: /api/health)
 ```
 
-### 3. Build your solution inside your fork
+### 3. Frontend
 
-> Your solution lives in your fork — do not open a pull request to this repo.
+```bash
+cd frontend
+npm install
+npm run dev                 # → http://localhost:3000
+```
 
-### 4. Making your fork private
+Open http://localhost:3000 — the dashboard and the AI assistant are ready.
 
-By default, a fork is public. If you want to keep your work hidden from other participants while you build:
+## Environment Variables
 
-1. Go to your fork on GitHub
-2. Open **Settings** (top of the repo page)
-3. Scroll to the **Danger Zone** at the bottom
-4. Click **Change repository visibility** → **Make private**
-5. Confirm by typing the repository name
+All backend variables go in `backend/.env` (see [`backend/.env.example`](./backend/.env.example)). **Never commit real keys.**
 
-> **You may keep your fork private during the hackathon period, but it must be switched back to public by 8:30 PM on the submission deadline.** Repositories still private after that time will not be judged. To make it public again, repeat the steps above and choose **Make public** instead.
+| Key | Where | Description |
+|---|---|---|
+| `SUPABASE_URL` | backend/.env | Supabase project URL (`https://xxxx.supabase.co`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | backend/.env | Supabase service role key (server-side only) |
+| `GROQ_API_KEY` | backend/.env | Groq API key for the AI agent |
+| `PORT` | backend/.env | Backend port (default `3001`) |
+| `NEXT_PUBLIC_API_URL` | frontend/.env.local (optional) | Backend API base, default `http://localhost:3001/api` |
 
-### 5. Submit
+## How to Use the Agent
 
-Submit your fork's public URL via the instructions in [`SUBMISSION.md`](./SUBMISSION.md).
+Open **AI Assistant** in the sidebar (or the floating bot button). It works from live data on every request. Try:
 
----
+- "When is my next class?" — reads the timetable *and* checks announcements for reschedules
+- "What assignments do I have due this week?"
+- "Show me all high priority announcements."
+- "Which labs have a projector and can fit at least 30 people?"
+- "Book Room 7A02 tomorrow from 3 PM to 5 PM." — checks conflicts (classes + bookings), then books
+- "I need a room for 5 people with a projector, tomorrow between 2 and 4."
+- "Register me for the Guest Lecture on Deep Learning."
+- "Just book me any room tomorrow afternoon." — deliberately vague: the agent asks before acting
+- "Cancel the CS department's booking." — refused: you can only cancel your own bookings
 
-## Quick Links
+Edit anything in the dashboard, then ask the agent about it — it answers from the updated data immediately.
 
-| Resource | Link |
-|----------|------|
-| Full problem statement | [`PROBLEM_STATEMENT.md`](./PROBLEM_STATEMENT.md) |
-| Data schema | [`schema/schema.md`](./schema/schema.md) |
-| Sample agent queries | [`sample_queries/sample_queries.md`](./sample_queries/sample_queries.md) |
-| Submission guide | [`SUBMISSION.md`](./SUBMISSION.md) |
+## Project Structure
 
----
+```
+backend/
+├── routes/        REST endpoints (schedules, rooms, events, announcements, assignments, chat)
+├── services/      Business logic — the ONLY layer that touches Supabase
+├── ai/            agent.js (tool-calling loop) + tools.js (wrappers over services)
+├── validation/    Zod schemas shared by routes and AI tools
+├── middleware/    validate.js, errorHandler.js
+├── database/      supabaseClient.js + schema.sql
+├── utils/         custom error classes, date/time helpers
+└── scripts/       seed.js, smokeTest.js, apiTest.js, agentTest.js
 
-## Seed Data Overview
+frontend/
+├── app/           pages: dashboard, schedule, rooms, events, announcements, assignments, assistant
+├── components/    Shell (nav), ui.tsx (design system), Toast, ThemeToggle
+└── lib/           typed API client + shared types
 
-| File | Records | What It Contains |
-|------|---------|-----------------|
-| `schedules.json` | 24 | Class timetable — course, day, time, room, instructor |
-| `rooms.json` | 20 | Rooms 7A01–7A07, 7B01–7B08, 7C01–7C05 with equipment and bookings |
-| `events.json` | 7 | Campus events with registration lists |
-| `announcements.json` | 8 | Notices with priority levels and expiry dates |
-| `assignments.json` | 8 | Course assignments with deadlines and submission status |
+data/              hackathon seed JSON (loaded into Supabase by npm run seed)
+schema/            hackathon schema reference
+```
 
-> **Important:** These JSON files are only the starting/seed data — not the database itself. Load them into a real backend (a database, or at minimum a backend service with persistent storage) on app startup. Your dashboard and AI agent must both read from and write to that backend, not the static JSON files directly. If you add, edit, or delete a record, the change must be saved in your backend and still be there after a reload — the JSON files in this repo will not update. The agent is also expected to always query the current backend state, not a cached or hardcoded copy of the seed data.
+## Hackathon Docs
 
----
-
-Good luck. Build something that actually works.
+- [Problem statement](./PROBLEM_STATEMENT.md) · [Schema](./schema/schema.md) · [Sample queries](./sample_queries/sample_queries.md) · [Submission guide](./SUBMISSION.md)
