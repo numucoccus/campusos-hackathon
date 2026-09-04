@@ -1,5 +1,6 @@
 'use client';
 import { api, fmt12h, fmtDate, ApiError } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import type { CampusEvent } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CalendarDays, MapPin, Pencil, Plus, Trash2, UserPlus, Users, X } from 'lucide-react';
@@ -7,12 +8,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Modal, Select, Skeleton, TextArea } from '@/components/ui';
 import { useToast } from '@/components/Toast';
 
-const CURRENT_USER = { student_id: '20-40532', name: 'Dhrubo' };
 const today = () => new Date().toISOString().slice(0, 10);
 const empty = () => ({ name: '', description: '', date: today(), start_time: '10:00', end_time: '12:00', end_date: '', venue: '', organizer: '', capacity: '50', status: 'upcoming' });
 
 export default function EventsPage() {
   const toast = useToast();
+  const { identity } = useAuth();
   const [items, setItems] = useState<CampusEvent[] | null>(null);
   const [status, setStatus] = useState('');
   const [detail, setDetail] = useState<CampusEvent | null>(null);
@@ -20,7 +21,7 @@ export default function EventsPage() {
   const [regModal, setRegModal] = useState<CampusEvent | null>(null);
   const [confirm, setConfirm] = useState<CampusEvent | null>(null);
   const [form, setForm] = useState<Record<string, string>>(empty());
-  const [regForm, setRegForm] = useState({ student_id: CURRENT_USER.student_id, name: CURRENT_USER.name });
+  const [regForm, setRegForm] = useState({ student_id: identity.student_id, name: identity.name });
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -102,7 +103,7 @@ export default function EventsPage() {
           <AnimatePresence>
             {filtered.map((e) => {
               const pct = Math.min(100, Math.round((e.registered / e.capacity) * 100));
-              const isRegistered = e.registrations?.some((r) => r.student_id === CURRENT_USER.student_id);
+              const isRegistered = e.registrations?.some((r) => r.student_id === identity.student_id);
               return (
                 <motion.div key={e.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }}>
                   <Card className="group flex h-full flex-col">
@@ -129,13 +130,13 @@ export default function EventsPage() {
                     </div>
                     <div className="mt-4 flex items-center gap-2">
                       {isRegistered ? (
-                        <Button variant="ghost" className="!py-1.5 !text-xs" onClick={() => cancelReg(e, CURRENT_USER.student_id)}>
+                        <Button variant="ghost" className="!py-1.5 !text-xs" onClick={() => cancelReg(e, identity.student_id)}>
                           <X size={13} /> Cancel my registration
                         </Button>
                       ) : (
                         <Button variant="soft" className="!py-1.5 !text-xs"
                           disabled={['full', 'cancelled', 'completed'].includes(e.status)}
-                          onClick={() => { setRegForm({ ...CURRENT_USER }); setRegModal(e); }}>
+                          onClick={() => { setRegForm({ student_id: identity.student_id, name: identity.name }); setRegModal(e); }}>
                           <UserPlus size={13} /> Register
                         </Button>
                       )}
@@ -172,7 +173,7 @@ export default function EventsPage() {
                 {detail.registrations!.map((r) => (
                   <div key={r.student_id} className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-1.5 text-sm">
                     <span>{r.name} <span className="text-xs text-muted">({r.student_id})</span></span>
-                    {r.student_id === CURRENT_USER.student_id && (
+                    {r.student_id === identity.student_id && (
                       <button onClick={() => cancelReg(detail, r.student_id)} className="text-muted hover:text-danger" aria-label="Cancel registration"><X size={14} /></button>
                     )}
                   </div>

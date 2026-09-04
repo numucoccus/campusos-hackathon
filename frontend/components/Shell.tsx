@@ -1,5 +1,6 @@
 'use client';
-import { Bell, Bot, CalendarDays, ClipboardList, DoorOpen, LayoutDashboard, PartyPopper } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
+import { Bell, Bot, CalendarDays, ClipboardList, DoorOpen, LayoutDashboard, LogIn, PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import ThemeToggle from './ThemeToggle';
@@ -16,6 +17,7 @@ const nav = [
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { ready, signedIn, identity } = useAuth();
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric',
   });
@@ -50,9 +52,27 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="border-t border-border px-6 py-4 text-[11px] text-muted">
-          Signed in as <span className="font-medium text-foreground">Dhrubo</span>
-          <br />ID 20-40532
+        <div className="border-t border-border px-4 py-4">
+          {!ready ? null : signedIn ? (
+            <Link href="/profile" className={`flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition hover:bg-surface-2 ${pathname === '/profile' ? 'bg-accent-soft' : ''}`}>
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-sm font-bold text-accent-fg">
+                {identity.name.charAt(0).toUpperCase()}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-xs font-medium text-foreground">{identity.name}</span>
+                <span className="block text-[11px] text-muted">ID {identity.student_id}</span>
+              </span>
+            </Link>
+          ) : (
+            <div className="space-y-1">
+              <Link href="/login" className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-xs font-medium text-accent transition hover:bg-surface-2">
+                <LogIn size={15} /> Sign in
+              </Link>
+              <Link href="/profile" className="block truncate px-2 text-[11px] text-muted hover:text-foreground">
+                Browsing as {identity.name} (demo)
+              </Link>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -64,7 +84,16 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             <span className="font-bold">CampusOS</span>
           </div>
           <div className="hidden text-sm text-muted md:block">{today}</div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <Link
+              href={signedIn ? '/profile' : '/login'}
+              aria-label={signedIn ? 'Profile' : 'Sign in'}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface text-sm font-bold text-accent transition hover:border-accent/50 active:scale-95"
+            >
+              {ready && signedIn ? identity.name.charAt(0).toUpperCase() : <LogIn size={15} />}
+            </Link>
+            <ThemeToggle />
+          </div>
         </header>
 
         <main className="flex-1 px-4 py-6 pb-24 md:px-8 md:pb-8">{children}</main>

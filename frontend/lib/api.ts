@@ -88,8 +88,16 @@ export const api = {
     update: (id: string, data: Partial<Assignment>) => req<Assignment>('PUT', `/assignments/${id}`, data),
     remove: (id: string) => req<Assignment>('DELETE', `/assignments/${id}`),
   },
-  // AI chat
-  chat: (messages: ChatMessage[]) => req<ChatResponse>('POST', '/chat', { messages }),
+  // AI chat — includes the active user identity so actions are on their behalf
+  chat: (messages: ChatMessage[], user?: { name: string; student_id: string }) =>
+    req<ChatResponse>('POST', '/chat', { messages, user }),
+  // Auth
+  auth: {
+    register: (data: { name: string; student_id: string; email: string; password: string }) =>
+      req<{ token: string; user: { id: string; email: string; name: string; student_id: string } }>('POST', '/auth/register', data),
+    login: (data: { email: string; password: string }) =>
+      req<{ token: string; user: { id: string; email: string; name: string; student_id: string } }>('POST', '/auth/login', data),
+  },
 };
 
 export const fmt12h = (t: string) => {

@@ -1,5 +1,6 @@
 'use client';
 import { api, ApiError } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import type { ChatMessage } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, RotateCcw, Send, Sparkles, Wrench } from 'lucide-react';
@@ -25,6 +26,7 @@ const toolLabel = (t: string) => t.replace(/_/g, ' ');
 
 export default function AssistantPage() {
   const toast = useToast();
+  const { identity } = useAuth();
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -43,7 +45,10 @@ export default function AssistantPage() {
     setMessages(next);
     setBusy(true);
     try {
-      const res = await api.chat(next.map(({ role, content }) => ({ role, content })));
+      const res = await api.chat(
+        next.map(({ role, content }) => ({ role, content })),
+        { name: identity.name, student_id: identity.student_id },
+      );
       setMessages([...next, { role: 'assistant', content: res.reply, toolCalls: res.toolCalls }]);
     } catch (e) {
       toast(e instanceof ApiError ? e.message : 'The assistant is unavailable. Is the backend running?', 'error');
@@ -72,7 +77,7 @@ export default function AssistantPage() {
         {messages.length === 0 && !busy && (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft text-accent"><Bot size={26} /></div>
-            <p className="text-sm font-medium">Hi Dhrubo! What do you want to know?</p>
+            <p className="text-sm font-medium">Hi {identity.name.split(' ')[0]}! What do you want to know?</p>
             <p className="mt-1 max-w-sm text-xs text-muted">I can check your schedule, find and book rooms, register you for events, and more — always from the latest data.</p>
           </div>
         )}

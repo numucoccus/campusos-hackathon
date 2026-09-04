@@ -11,6 +11,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'campusos-backend', time: new Date().toISOString() });
 });
 
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/schedules', require('./routes/schedule'));
 app.use('/api/rooms', require('./routes/rooms'));
 app.use('/api/events', require('./routes/events'));

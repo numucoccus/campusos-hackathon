@@ -1,5 +1,6 @@
 'use client';
 import { api, fmt12h, fmtDate } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import type { Announcement, Assignment, CampusEvent, Schedule } from '@/lib/types';
 import { motion } from 'framer-motion';
 import { ArrowRight, Bell, CalendarDays, ClipboardList, PartyPopper } from 'lucide-react';
@@ -10,6 +11,7 @@ import { Badge, Card, Skeleton } from '@/components/ui';
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 
 export default function Dashboard() {
+  const { identity } = useAuth();
   const [schedules, setSchedules] = useState<Schedule[] | null>(null);
   const [events, setEvents] = useState<CampusEvent[] | null>(null);
   const [assignments, setAssignments] = useState<Assignment[] | null>(null);
@@ -38,7 +40,7 @@ export default function Dashboard() {
   return (
     <div className="mx-auto max-w-6xl">
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-bold">Welcome back, Dhrubo 👋</h1>
+        <h1 className="text-2xl font-bold">Welcome back, {identity.name.split(' ')[0]} 👋</h1>
         <p className="mt-1 text-sm text-muted">Here is what is happening on campus right now — all data is live.</p>
       </motion.div>
 

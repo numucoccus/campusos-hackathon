@@ -1,11 +1,11 @@
 const router = require('express').Router();
 const { asyncHandler } = require('../middleware/errorHandler');
-const { runAgent } = require('../ai/agent');
+const { runAgent, DEFAULT_USER } = require('../ai/agent');
 const { ValidationError } = require('../utils/errors');
 
-// POST /api/chat  { messages: [{role:'user'|'assistant', content}] }
+// POST /api/chat  { messages: [{role:'user'|'assistant', content}], user?: {name, student_id} }
 router.post('/', asyncHandler(async (req, res) => {
-  const { messages } = req.body || {};
+  const { messages, user } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0) {
     throw new ValidationError('Body must include a non-empty "messages" array');
   }
@@ -14,7 +14,12 @@ router.post('/', asyncHandler(async (req, res) => {
     .map((m) => ({ role: m.role, content: m.content }));
   if (clean.length === 0) throw new ValidationError('No valid messages provided');
 
-  const result = await runAgent(clean);
+  const agentUser =
+    user && typeof user.name === 'string' && user.name && typeof user.student_id === 'string' && user.student_id
+      ? { name: user.name, student_id: user.student_id }
+      : DEFAULT_USER;
+
+  const result = await runAgent(clean, agentUser);
   res.json(result);
 }));
 

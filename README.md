@@ -34,6 +34,7 @@ CampusOS keeps a student's scattered campus information — class schedules, roo
 | Backend | Node.js + Express |
 | Validation | Zod (shared by REST routes and AI tools) |
 | Database | Supabase (PostgreSQL) with constraint-level double-booking guard |
+| Authentication | Supabase Auth (register / login / profile) |
 | AI | Groq — `openai/gpt-oss-120b` with native function/tool calling |
 
 ## Setup Instructions
@@ -94,6 +95,16 @@ Open **AI Assistant** in the sidebar (or the floating bot button). It works from
 
 Edit anything in the dashboard, then ask the agent about it — it answers from the updated data immediately.
 
+## Accounts (Sign in / Register / Profile)
+
+CampusOS includes optional authentication backed by **Supabase Auth**:
+
+- **/register** — create an account (name, student ID, email, password)
+- **/login** — sign in; the sidebar, dashboard, and agent then act as *you*
+- **/profile** — your info, your room bookings, and your event registrations (cancel from here)
+
+When signed in, room bookings, event registrations, and every AI-agent action are made under **your name and student ID** — and the ownership rules apply to you (you can only cancel your own bookings/registrations). Without an account the app browses as a demo user (`Dhrubo`, `20-40532`), so judges can use everything with zero setup.
+
 ## Project Structure
 
 ```
@@ -108,9 +119,9 @@ backend/
 └── scripts/       seed.js, smokeTest.js, apiTest.js, agentTest.js
 
 frontend/
-├── app/           pages: dashboard, schedule, rooms, events, announcements, assignments, assistant
+├── app/           pages: dashboard, schedule, rooms, events, announcements, assignments, assistant, login, register, profile
 ├── components/    Shell (nav), ui.tsx (design system), Toast, ThemeToggle
-└── lib/           typed API client + shared types
+└── lib/           typed API client + shared types + auth state
 
 data/              hackathon seed JSON (loaded into Supabase by npm run seed)
 schema/            hackathon schema reference

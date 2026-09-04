@@ -1,5 +1,6 @@
 'use client';
 import { api, fmt12h, fmtDate, ApiError } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import type { Room } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AirVent, Computer, MonitorPlay, Pencil, PenLine, Plus, Presentation, Search, Trash2, Users, X } from 'lucide-react';
@@ -7,7 +8,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Field, Input, Modal, Select, Skeleton } from '@/components/ui';
 import { useToast } from '@/components/Toast';
 
-const CURRENT_USER = 'Dhrubo';
 const tomorrow = () => new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 
 const equipIcon = (e: string) => {
@@ -26,10 +26,12 @@ const WINGS: { key: string; label: string }[] = [
 ];
 
 const emptyRoom = () => ({ room_number: '', type: 'classroom', capacity: '40', equipment: 'whiteboard, projector, AC', floor: '7', status: 'available' });
-const emptyBooking = () => ({ date: tomorrow(), start_time: '15:00', end_time: '17:00', booked_by: CURRENT_USER, purpose: '' });
+const emptyBooking = (name: string) => ({ date: tomorrow(), start_time: '15:00', end_time: '17:00', booked_by: name, purpose: '' });
 
 export default function RoomsPage() {
   const toast = useToast();
+  const { identity } = useAuth();
+  const userName = identity.name;
   const [items, setItems] = useState<Room[] | null>(null);
   const [type, setType] = useState('');
   const [minCap, setMinCap] = useState('');
@@ -38,7 +40,7 @@ export default function RoomsPage() {
   const [roomModal, setRoomModal] = useState<{ mode: 'add' | 'edit'; item?: Room } | null>(null);
   const [confirm, setConfirm] = useState<Room | null>(null);
   const [roomForm, setRoomForm] = useState<Record<string, string>>(emptyRoom());
-  const [bookingForm, setBookingForm] = useState<Record<string, string>>(emptyBooking());
+  const [bookingForm, setBookingForm] = useState<Record<string, string>>(emptyBooking(userName));
   const [finder, setFinder] = useState({ date: tomorrow(), start: '14:00', end: '16:00', minCapacity: '', equipment: '' });
   const [finderResults, setFinderResults] = useState<Room[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -89,7 +91,7 @@ export default function RoomsPage() {
         booked_by: bookingForm.booked_by, purpose: bookingForm.purpose || 'Booked via dashboard',
       });
       toast(`Room ${roomNumber} booked ✓`);
-      setBookingForm(emptyBooking());
+      setBookingForm(emptyBooking(userName));
       setFinderResults(null);
       load();
     } catch (e) { toast(e instanceof ApiError ? e.message : 'Booking failed', 'error'); }
@@ -97,7 +99,7 @@ export default function RoomsPage() {
   };
 
   const cancelBooking = async (bookingId: string) => {
-    try { await api.rooms.cancelBooking(bookingId, CURRENT_USER); toast('Booking cancelled'); load(); }
+    try { await api.rooms.cancelBooking(bookingId, userName); toast('Booking cancelled'); load(); }
     catch (e) { toast(e instanceof ApiError ? e.message : 'Cancel failed', 'error'); }
   };
 
@@ -145,7 +147,7 @@ export default function RoomsPage() {
                     <span className="font-semibold">{r.room_number}</span>
                     <span className="text-xs text-muted"><Users size={11} className="inline" /> {r.capacity}</span>
                     <Button variant="soft" className="!px-2.5 !py-1 !text-xs"
-                      onClick={() => { setBookingForm({ date: finder.date, start_time: finder.start, end_time: finder.end, booked_by: CURRENT_USER, purpose: '' }); book(r.room_number); }}>
+                      onClick={() => { setBookingForm({ date: finder.date, start_time: finder.start, end_time: finder.end, booked_by: userName, purpose: '' }); book(r.room_number); }}>
                       Book
                     </Button>
                   </div>
@@ -180,7 +182,7 @@ export default function RoomsPage() {
                 <AnimatePresence>
                   {wingRooms.map((r) => (
                     <motion.div key={r.id} layout initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-                      <Card onClick={() => { setDetail(r); setBookingForm(emptyBooking()); }} className="group h-full hover:border-accent/50">
+                      <Card onClick={() => { setDetail(r); setBookingForm(emptyBooking(userName)); }} className="group h-full hover:border-accent/50">
                         <div className="flex items-start justify-between">
                           <span className="text-lg font-bold">{r.room_number}</span>
                           <Badge value={r.status} />
@@ -254,7 +256,7 @@ export default function RoomsPage() {
               <Input placeholder="Purpose" value={bookingForm.purpose} onChange={(e) => setBookingForm({ ...bookingForm, purpose: e.target.value })} />
               <Button onClick={() => book(detail.room_number)} disabled={busy}>{busy ? 'Booking…' : 'Book'}</Button>
             </div>
-            <p className="mt-2 text-[11px] text-muted">Booking as {CURRENT_USER}. Conflicts with classes and other bookings are checked automatically.</p>
+            <p className="mt-2 text-[11px] text-muted">Booking as {userName}. Conflicts with classes and other bookings are checked automatically.</p>
           </div>
         )}
       </Modal>
